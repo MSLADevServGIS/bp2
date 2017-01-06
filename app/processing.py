@@ -137,10 +137,13 @@ def city(all_permits):
     all_const['permit_type'] = all_const['permit_type'].apply(
         lambda x: x.split(" ")[0])
 
+    # Dwellings
     # Convert NULL dwellings to 0
     all_const['dwellings'].fillna(0, inplace=True)
     # Convert Dwellings to integer
     all_const['dwellings'] = all_const['dwellings'].apply(lambda x: int(x))
+    # Drop all rows with 0 dwelling units
+    all_const = all_const[all_const.dwellings != 0]
 
     # Convert NULL addresses to ""
     all_const['address'].fillna("", inplace=True)
@@ -155,7 +158,7 @@ def city(all_permits):
     all_const = all_const[~all_const.address.str.contains("MSTR")]
 
     # Sort data
-    all_const = all_const.sort(["permit_number", "address", "dwellings"])
+    all_const = all_const.sort_values(by=["permit_number", "address", "dwellings"])
 
     # =========================================================================
     # GET PERMIT YEAR / ADD YEAR TO OUTPUT REPORT

@@ -17,7 +17,7 @@ import defopt
 
 import aside
 import dslw
-import dslw.io
+import dslw.arcio
 
 import app
 
@@ -73,7 +73,7 @@ def update_base(replace=False):
     for fc in data:
         if fc["name"] not in conn.get_tables():
             aside.nix.write(fc["name"])
-            dslw.io.arc2lite(conn, fc["path"], fc["name"], t_srid=SRID)
+            dslw.arcio.arc2lite(conn, fc["path"], fc["name"], t_srid=SRID)
             aside.nix.ok()
     conn.close()
     print("Done")

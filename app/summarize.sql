@@ -11,7 +11,7 @@ Formatting Parameters:
 CREATE TABLE IF NOT EXISTS summary (
     jurisdiction TEXT PRIMARY KEY,
     tot_permits INT,
-    tot_dwellings,
+    tot_dwellings INT,
     sd INT,
     dup INT,
     md INT
@@ -52,11 +52,12 @@ SET
         ),
     -- Sum Duplexes
     dup = (
-        SELECT SUM(dwellings) FROM (
-          SELECT DISTINCT permit_number, dwellings 
-          FROM {tbl}
-          GROUP BY permit_number 
-          HAVING SUM(dwellings) = 2)
+        SELECT SUM(dwellings) 
+        FROM (
+            SELECT *
+            FROM {tbl}
+            GROUP BY permit_number
+            HAVING dwellings = 2)
         ),
     -- Sum Multidwellings
     md = (

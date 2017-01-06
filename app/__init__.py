@@ -5,6 +5,7 @@ import processing
 
 
 def spatialize_script(conn, table, srid):
+    """Matches permits to geocodes using parcels/address data."""
     _c = conn.cursor()
     _c.execute(open("app/spatialize.sql", "r").read().format(
         table=table, srid=srid))
@@ -14,6 +15,7 @@ def spatialize_script(conn, table, srid):
     #script = script.format(table=table, srid=srid)
     #_c.execute(script)
     return
+
 
 '''
 with open("spatialize.sql", "r") as ss:
