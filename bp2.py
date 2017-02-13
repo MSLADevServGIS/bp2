@@ -51,8 +51,18 @@ data = [
     ]
 # Names correlate with table names in .sql scripts
 
+'''
+@aside.nix_process
+def check_null_geometry(null_geom):
+    """Msg:
+        Check for Null Geometries
+    """
+    if null_geom:
+        raise AttributeError("Null geometries found")
+'''
 
-def update_base(replace=False):
+
+def update_base():
     """Updates the sde_data.sqlite database from various data.
 
     ::
@@ -63,10 +73,10 @@ def update_base(replace=False):
     Keyword Arguments:
         replace (bool): option to delete and recreate the existing db.
     """
-    if replace:
-        aside.nix.write("Replacing database...")
-        os.remove(SDE_DATA)
-        aside.nix.ok()
+    #if replace:
+    aside.nix.write("Replacing database...")
+    os.remove(SDE_DATA)
+    aside.nix.ok()
     conn = dslw.SpatialDB(SDE_DATA, verbose=False)
     print("Getting data...")
     print("This will take a long time!")
@@ -109,7 +119,7 @@ def process_city(year):
     aside.nix.ok()
     # Load csv to db
     aside.nix.write("Insert CSV")
-    dslw.csv2lite(conn, out_csv)#, rpt_name)
+    dslw.csv2lite(conn, out_csv)
     aside.nix.ok()
     # Add notes column
     aside.nix.write("Spatialize permits")
@@ -122,19 +132,49 @@ def process_city(year):
         SDE_DATA))
     # Spatialize
     app.spatialize_script(conn, table_name, SRID)
+    cur.execute("SELECT address FROM {0} WHERE geometry IS NULL".format(
+        table_name))
+    null_geom_df = dslw.utils.Fetch(cur).as_dataframe()
     aside.nix.ok()
+    if len(null_geom_df) > 0:
+        print("")
+        aside.nix.warn("Null Geometries Found!")
+        print(null_geom_df)
+        print("")
+    #check_null_geometry(null_geom)
+
+    # Density
+    aside.nix.write("Calculate 'density<year>' table")
+    with open("app/density.sql", "r") as script:
+        density_sql = script.read()
+        density = density_sql.format(tbl=table_name, year=year, srid=SRID)
+    cur.execute(density).fetchall()
+    aside.nix.ok()
+
     # Summarize
-    aside.nix.write("Summary tables")
+    aside.nix.write("Create 'summary' table")
     with open("app/summarize.sql", "r") as script:
         summarize_sql = script.read()
         summarize = summarize_sql.format(tbl=table_name, juris="City")
-    cur.execute(summarize)
+    cur.execute(summarize).fetchall()
     aside.nix.ok()
 
+    print("")
+    check_sum = ("SELECT jurisdiction, tot_dwellings, sd, dup_units, md_units "
+                 "FROM summary")
+    df = dslw.utils.Fetch(cur.execute(check_sum)).as_dataframe()
+    print(df)
+    print("")
+    total = sum([df["sd"].ix[0], df["dup_units"].ix[0], df["md_units"].ix[0]])
+    if df["tot_dwellings"].ix[0] != total:
+        aside.nix.warn("Total does not match")
     aside.status.custom("COMPLETE", "cyan")
     return
 
 
+def export_shp():
+    pass
+
+
 if __name__ == "__main__":
-    # Arg Parser stuff
     defopt.run(update_base, process_city)

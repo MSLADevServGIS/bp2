@@ -41,7 +41,7 @@ DELETE FROM {table}
   WHERE geocode = 'REMOVE';
 */
 
--- Join on parcel geocode
+-- Join on parcel geocode (Centroid)
 UPDATE {table} -- permit table
 SET
 	notes = 'geocode',
@@ -80,6 +80,9 @@ SET
 WHERE geometry IS NULL;
 
 
+/* This script alone may not spatialize all features. Townhomes/Condos may require
+the additional code run by the bp2 utility.
+*/
 
 SELECT CreateSpatialIndex('{table}', 'geometry');
 
